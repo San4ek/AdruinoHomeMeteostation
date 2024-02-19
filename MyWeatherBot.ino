@@ -2,8 +2,8 @@
 
 #include <ESP8266WiFi.h>
 
-#define WIFI_SSID "" //название точки доступа WiFi
-#define WIFI_PASS "" //пароль к точке доступа
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 #define BOT_TOKEN ""
 
 #define TEMPERATURE "/temperature"
@@ -14,9 +14,9 @@
 
 bool isConnected=false;
 
-byte tries = 10; // Попыткок подключения к точке доступа
+byte tries = 10;
 
-FastBot bot(BOT_TOKEN); // с указанием токена
+FastBot bot(BOT_TOKEN);
 
 void setup() {
   Serial.begin(115200);
