@@ -2,9 +2,9 @@
 
 #include <ESP8266WiFi.h>
 
-#define WIFI_SSID "1003_2.4G"
-#define WIFI_PASS "NeLezUbet1003"
-#define BOT_TOKEN "6677458339:AAFkbw8ZCvQ1yPaMOanK4LtFWHRejNWXdWo"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+#define BOT_TOKEN ""
 
 #define TEMPERATURE "/temperature"
 #define HUMIDITY "/humidity"
