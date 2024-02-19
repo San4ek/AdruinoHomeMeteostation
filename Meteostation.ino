@@ -41,29 +41,26 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 #define BUTTONS_PIN A0
 
+#define INCORRECT_VALUE 0
+
 byte BEFORE_UPDATE = UPDATE_TIME;
 bool BUTTON_STATE = 0;
 byte CURRENT_FUN = 0;
 bool UPDATED=0;
 bool isWork=false;
 
-float lastTemp=-1;
-float lastHum=-1;
-float lastPress=-1;
+float lastTemp=INCORRECT_VALUE;
+float lastHum=INCORRECT_VALUE;
+float lastPress=INCORRECT_VALUE;
 
 void setup() {
   if (initAll()) {
     isWork=true;
+
     printHelloMessage();
-
-    initValues();
-
-    initTimer1();
-    initPCINT1();
 
     sei();
   } else {
-    isWork=false;
     printErrorMessage();
   }
 }
@@ -87,17 +84,14 @@ float getPressureMeasurement() {
 }
 
 void printTempMeasurement(float temp) {
-  lastTemp=temp;
   updateLine(0, TEMPERATURE_STR + String(temp) + UNITS[TEMPERATURE_FUN]);
 }
 
 void printPressureMeasurement(float pressure) {
-  lastPress=pressure;
   updateLine(0, PRESSURE_STR + String(pressure)+UNITS[PRESSURE_FUN]);
 }
 
 void printHumidityMeasurement(float humidity) {
-  lastHum=humidity;
   updateLine(0, HUMIDITY_STR + String(humidity) + UNITS[HUMIDITY_FUN]);
 }
 
@@ -113,14 +107,18 @@ void printErrorMessage() {
   lcd.print(CHECK);
 }
 
+bool initBme() {
+  return bme.begin(BME_ADDRESS);
+}
+
 bool initAll() {
   Serial.begin(115200);
   lcd.begin(16, 2);
-  return checkBme();
-}
 
-bool checkBme() {
-  return bme.begin(BME_ADDRESS);
+  initTimer1();
+  initPCINT1();
+
+  return initBme();
 }
 
 void printHelloMessage() {
@@ -135,29 +133,22 @@ void updateLine(short line, String message) {
 }
 
 void printMeasurement() {
-  if (checkBme()) {
-    isWork=true;
-
     switch (CURRENT_FUN) {
       case TEMPERATURE_FUN:
-        printTempMeasurement(getTempMeasurement());
+        printTempMeasurement(lastTemp);
         break;
       case PRESSURE_FUN:
-        printPressureMeasurement(getPressureMeasurement());
+        printPressureMeasurement(lastPress);
         break;
       case HUMIDITY_FUN:
-        printHumidityMeasurement(getHumidityMeasurement());
+        printHumidityMeasurement(lastHum);
         break;
     }
-  } else {
-    isWork=false;
-    printErrorMessage();
-  }
 }
 
 void measure() {
   printWaitMessage();
-  printMeasurement();
+  initValues();
 }
 
 void reverseUpdate() {
@@ -196,42 +187,33 @@ void loop() {
     if (com=="/temperature") {
       waitForWrite();
 
-      Serial.print(String(lastTemp)+UNITS[0]);
+      Serial.print(String(lastTemp));
     }
 
     if (com=="/pressure") {
       waitForWrite();
 
-      Serial.print(String(lastPress)+UNITS[1]);
+      Serial.print(String(lastPress));
     }
 
     if (com=="/humidity") {
       waitForWrite();
 
-      Serial.print(String(lastHum)+UNITS[2]);
-    }
-
-    if (com=="/isWork") {
-      waitForWrite();
-
-      String work;
-
-      if (isWork) {
-        work="work";
-      } else {
-        work="notWork";
-      }
-
-      Serial.print(isWork);
+      Serial.print(String(lastHum));
     }
   }
 
-  if (!UPDATED) {
-    if (isWork) {
+  if (!UPDATED){
+    if (isWork || initBme()) {
+      isWork=true;
       reverseUpdate();
       measure();
+    }
+    if (lastHum==INCORRECT_VALUE || lastPress==INCORRECT_VALUE || lastTemp==INCORRECT_VALUE) {
+      isWork=false;
+      printErrorMessage();
     } else {
-      isWork=checkBme();
+      printMeasurement();
     }
   }
 }
