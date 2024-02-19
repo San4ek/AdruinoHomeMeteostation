@@ -2,15 +2,17 @@
 
 #include <ESP8266WiFi.h>
 
-#define WIFI_SSID ""
-#define WIFI_PASS ""
-#define BOT_TOKEN ""
+#define WIFI_SSID "1003_2.4G"
+#define WIFI_PASS "NeLezUbet1003"
+#define BOT_TOKEN "6677458339:AAFkbw8ZCvQ1yPaMOanK4LtFWHRejNWXdWo"
 
 #define TEMPERATURE "/temperature"
 #define HUMIDITY "/humidity"
 #define PRESSURE "/pressure"
 #define START "/start"
-#define IS_WORK "/isWork"
+
+#define INCORRECT_VALUE "0.00"
+#define UNITS (String[]){"C","mm","%"}
 
 bool isConnected=false;
 
@@ -30,14 +32,16 @@ void loop() {
 
 void newMsg(FB_msg& msg) {
   if (msg.text==START) {
-      showMenu(msg);
+    showMenu(msg);
 
-      return;
+    return;
   }
 
   if (msg.text==TEMPERATURE) {
-    if (isWork()) {
-      replyMsg("Temperature: "+getValue(TEMPERATURE), msg);
+    String value=getValue(TEMPERATURE);
+
+    if (value!=INCORRECT_VALUE) {
+      replyMsg("Last temperature: "+value+UNITS[0], msg);
     } else {
       replyCheck(msg);
     }
@@ -46,8 +50,10 @@ void newMsg(FB_msg& msg) {
   }
 
   if (msg.text==HUMIDITY) {
-    if (isWork()) {
-      replyMsg("Humidity: "+getValue(HUMIDITY), msg);
+    String value=getValue(HUMIDITY);
+
+    if (value!=INCORRECT_VALUE) {
+      replyMsg("Last humidity: "+value+UNITS[2], msg);
     } else {
       replyCheck(msg);
     }
@@ -56,18 +62,10 @@ void newMsg(FB_msg& msg) {
   }
 
   if (msg.text==PRESSURE) {
-    if (isWork()) {
-      replyMsg("Pressure: "+getValue(PRESSURE), msg);
-    } else {
-      replyCheck(msg);
-    }
+    String value=getValue(PRESSURE);
 
-    return;
-  }
-
-  if (msg.text==IS_WORK) {
-    if (isWork()) {
-      replyOk(msg);
+    if (value!=INCORRECT_VALUE) {
+      replyMsg("Pressure: "+value+UNITS[1], msg);
     } else {
       replyCheck(msg);
     }
@@ -76,6 +74,12 @@ void newMsg(FB_msg& msg) {
   }
 
   deleteMsg(msg);
+}
+
+void printSerial(String com) {
+  waitForWriteSerial();
+
+  Serial.print(com);
 }
 
 String getValue(String com) {
@@ -89,28 +93,6 @@ String readStringSerial() {
 
   return Serial.readString();
 }
-
-byte readSerial() {
-  waitAvailableSerial();
-
-  return Serial.read();
-}
-
-void printSerial(String com) {
-  waitForWriteSerial();
-
-  Serial.println(com);
-}
-
-bool isWork() {
-  printSerial(IS_WORK);
-
-  String str=readStringSerial();
-  str.trim();
-
-  return str=="work";
-}
-
 void waitForWriteSerial() {
   while (Serial.availableForWrite() == 0);
 }
@@ -124,7 +106,7 @@ void deleteMsg(FB_msg msg) {
 }
 
 void showMenu(FB_msg msg) {
-  bot.showMenu(String(TEMPERATURE)+"\n"+String(HUMIDITY)+"\n"+String(PRESSURE)+"\n"+IS_WORK+"\n", msg.chatID);
+  bot.showMenu(String(TEMPERATURE)+"\n"+String(HUMIDITY)+"\n"+String(PRESSURE)+"\n", msg.chatID);
 }
 
 void replyCheck(FB_msg msg) {
